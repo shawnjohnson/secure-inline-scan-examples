@@ -1,0 +1,18 @@
+# Use Sysdig Secure Inline Scan to run Pipeline Build step
+# Note: The image is saved to a tar file for scanning; BitBucket Pipelines does not make the docker-daemon socket available
+image: quay.io/sysdig/secure-inline-scan:2
+
+pipelines:
+  default:
+    - step:
+        script:
+          - export IMAGE_NAME=mycompany/my-secure-app
+          - export IMAGE_TAR=image.tar
+          - docker build -t $IMAGE_NAME .
+          # Save docker image to a tar file for scanning
+          - docker save $IMAGE_NAME -o $IMAGE_TAR
+          - /sysdig-inline-scan.sh -k $SYSDIG_API_TOKEN -s $SYSDIG_API_URL --storage-type docker-archive --storage-path $IMAGE_TAR $IMAGE_NAME
+        services:
+          - docker
+        caches:
+          - docker
